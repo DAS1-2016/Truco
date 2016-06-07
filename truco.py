@@ -1,11 +1,12 @@
 import random
 
+
 class Card():
     """Prototype class for Card"""
     def __init__(self, suit, value=None):
         self.suit = suit
         self.value = value
-    
+
     def clone(self, value):
         return Card(self.suit, value)
 
@@ -23,12 +24,13 @@ class Card():
 
         return value + " de " + suit
 
+
 class Deck():
     """Singleton Pool class for Deck"""
 
     CARDS_QUANTITY = 40
     instance = None
-    
+
     @staticmethod
     def get_instance():
         if Deck.instance is None:
@@ -44,14 +46,14 @@ class Deck():
         self.__create_cards("Ouros")
         self.__create_cards("Espadas")
         self.__create_cards("Paus")
-    
+
     def __create_cards(self, suit):
         suit_card = Card(suit)
         self.cards.append(suit_card.clone("A"))
         self.cards.append(suit_card.clone("J"))
         self.cards.append(suit_card.clone("Q"))
         self.cards.append(suit_card.clone("K"))
-        for number in range(2,8): 
+        for number in range(2, 8):
             value = str(number)
             card = suit_card.clone(value)
             self.cards.append(card)
@@ -63,7 +65,8 @@ class Deck():
     def __check_deck(self):
         """ Check deck integrity """
         if len(self.cards) is not self.CARDS_QUANTITY:
-            raise Exception("Alguem esta roubando e nao devolveu todas as cartas!")
+            raise Exception("""Alguem esta roubando e nao
+                             devolveu todas as cartas!""")
 
     def get_top_card(self):
         top_card = self.cards[0]
@@ -82,6 +85,37 @@ class Deck():
         self.cards.append(card)
 
 
+class Hand(object):
+    """ Represents the player hand """
+
+    def __init__(self, cards):
+        self.cards = cards
+
+    def throw_card(self, card_position=0):
+
+        if card_position in range(1, len(self.cards) + 1):
+            card_position -= 1
+            card =  self.cards[card_position] 
+            self.__remove_card(card)
+        else:
+            # Return the first card of the hand by default
+            if not self.cards:
+                raise Exception("Mao vazia")
+            else:
+                card = self.cards[0]
+                self.__remove_card(card)
+
+        return card
+
+    def __remove_card(self, card):
+        self.cards.remove(card)
+
+    def __str__(self):
+        cards_str = ""
+        for card in self.cards:
+            cards_str += str(card) + ", "
+        return cards_str
+
 if __name__ == '__main__':
     deck = Deck.get_instance()
     try:
@@ -93,5 +127,31 @@ if __name__ == '__main__':
     deck.keep_card(card)
     try:
         deck.shuffle()
+    except Exception, e:
+        print e
+
+    print
+    cards = []
+    for i in range(1, 4):
+        cards.append(deck.get_bottom_card())
+
+    hand = Hand(cards)
+    print hand
+
+    # Throwing first card
+    hand.throw_card()
+    print hand
+
+    # Throwing third card
+    hand.throw_card()
+    print hand
+
+    # Throwing second card
+    hand.throw_card()
+    print hand
+
+    try:
+        print hand.throw_card()
+        print hand
     except Exception, e:
         print e
