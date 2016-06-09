@@ -116,6 +116,124 @@ class Hand(object):
             cards_str += str(card) + ", "
         return cards_str
 
+class CardCheck(object):
+    """ Check the cards to know the round winner"""
+    
+    SHACKLES = {'zap' : Card("Paus", "4"),
+                'hearts' : Card("Copas", "7"),
+                'diamonds' : Card("Ouros", "7"),
+                'ace_of_spades' : Card("Espadas", "A")
+                }
+
+    CARDS_VALUES = {
+                    '3': 10,
+                    '2': 9,
+                    'A': 8,
+                    'K': 7,
+                    'J': 6,
+                    'Q': 5,
+                    '7': 4,
+                    '6': 3,
+                    '5': 2,
+                    '4': 1
+                }            
+
+    def __init__(self, round_cards):
+        self.round_cards = round_cards
+        self.winner_card = self.check_winner_round()
+    
+    def get_winner(self):
+        return self.winner_card
+
+    def check_winner_round(self):
+        winners_pairs = []
+
+        pair_one_winner = self.check_shackles(self.round_cards['pair_one'])
+        winners_pairs.append(pair_one_winner)
+        pair_two_winner = self.check_shackles(self.round_cards['pair_two'])
+        winners_pairs.append(pair_two_winner)
+        
+        winner_card = self.check_shackles(winners_pairs)   
+        return winner_card
+
+    def check_shackles(self, cards):
+        fst_card_is_shackle = self.check_if_is_shackle(cards[0]); 
+        snd_card_is_shackle = self.check_if_is_shackle(cards[1]); 
+        if(fst_card_is_shackle and snd_card_is_shackle):
+            winner_card = self.get_shackle_winner(cards)
+        
+        elif(not snd_card_is_shackle and fst_card_is_shackle):
+            winner_card = cards[0]; 
+        
+        elif(not fst_card_is_shackle and snd_card_is_shackle):
+            winner_card = cards[1]; 
+        
+        else:
+            winner_card = self.get_winner_without_shackles(cards)
+
+        return winner_card
+
+    def check_if_is_shackle(self, card):
+        zap = card.value is self.SHACKLES['zap'].value and card.suit is self.SHACKLES['zap'].suit
+        hearts = card.value is self.SHACKLES['hearts'].value and card.suit is self.SHACKLES['hearts'].suit
+        diamonds = card.value is self.SHACKLES['diamonds'].value and card.suit is self.SHACKLES['diamonds'].suit
+        ace_of_spades = card.value is self.SHACKLES['ace_of_spades'].value and card.suit is self.SHACKLES['ace_of_spades'].suit
+
+        if(zap or hearts or diamonds or ace_of_spades):
+            is_shackle = True
+        else:
+            is_shackle = False
+
+        return is_shackle
+
+    def get_winner_without_shackles(self, cards):
+        first_card = cards[0].value  
+        second_card = cards[1].value  
+        if(self.CARDS_VALUES[first_card] > self.CARDS_VALUES[second_card]):
+            winner_card = cards[0]
+        else:
+            winner_card = cards[1]
+
+        return winner_card
+    def get_shackle_winner(self, cards):
+
+        first_card_shackle = self.get_shackle(cards[0])
+        second_card_shackle = self.get_shackle(cards[1])
+        print first_card_shackle
+        print second_card_shackle
+        if(first_card_shackle is "zap"):
+            winner = cards[0]
+        elif(second_card_shackle is "zap"):
+            winner = cards[1]     
+        elif(first_card_shackle is "hearts"):
+            winner = cards[0]
+        elif(second_card_shackle is "hearts"):
+            winner = cards[1]
+        elif(first_card_shackle is "diamonds"):
+            winner = cards[0]
+        else:
+            winner = cards[1]
+
+        return winner
+
+    def get_shackle(self, card):
+        
+        zap = card.value is self.SHACKLES['zap'].value and card.suit is self.SHACKLES['zap'].suit
+        hearts = card.value is self.SHACKLES['hearts'].value and card.suit is self.SHACKLES['hearts'].suit
+        diamonds = card.value is self.SHACKLES['diamonds'].value and card.suit is self.SHACKLES['diamonds'].suit
+        ace_of_spades = card.value is self.SHACKLES['ace_of_spades'].value and card.suit is self.SHACKLES['ace_of_spades'].suit
+
+        if(zap):
+            shackle = "zap"
+        elif(hearts):
+            shackle = "hearts"
+        elif(diamonds):
+            shackle = "diamonds"
+        else:
+            shackle = "ace_of_spades"
+
+        return shackle
+
 if __name__ == '__main__':
     deck = Deck.get_instance()
     try:
@@ -123,7 +241,7 @@ if __name__ == '__main__':
     except Exception, e:
         print e
     card = deck.get_bottom_card()
-    print card
+    # print card
     deck.keep_card(card)
     try:
         deck.shuffle()
@@ -132,26 +250,31 @@ if __name__ == '__main__':
 
     print
     cards = []
-    for i in range(1, 4):
-        cards.append(deck.get_bottom_card())
+    # for i in range(1, 4):
+    #     cards.append(deck.get_bottom_card())
+    
+    # hand = Hand(cards)
+    cards.append(Card("Ouros", "3"))
+    cards.append(Card("Ouros", "7"))
+    cards2 = []
+    cards2.append(Card("Espadas", "A"))
+    cards2.append(Card("Copas", "7"))
+    dict_c = {'pair_one':cards, 'pair_two':cards2} 
+    cardck = CardCheck(dict_c)
+    # # Throwing first card
+    # hand.throw_card()
+    # # print hand
 
-    hand = Hand(cards)
-    print hand
+    # # Throwing third card
+    # hand.throw_card()
+    # # print hand
 
-    # Throwing first card
-    hand.throw_card()
-    print hand
+    # # Throwing second card
+    # hand.throw_card()
+    # # print hand
 
-    # Throwing third card
-    hand.throw_card()
-    print hand
-
-    # Throwing second card
-    hand.throw_card()
-    print hand
-
-    try:
-        print hand.throw_card()
-        print hand
-    except Exception, e:
-        print e
+    # try:
+    #     print hand.throw_card()
+    #     print hand
+    # except Exception, e:
+    #     print e
