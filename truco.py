@@ -155,3 +155,14 @@ if __name__ == '__main__':
         print hand
     except Exception, e:
         print e
+
+
+class Player(object):
+    """ Represents the player """
+
+    def __init__(self, player_name, hand, game):
+        self.player_name = player_name
+        self.hand = hand
+        self.game = game
+
+    
