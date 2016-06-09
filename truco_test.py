@@ -1,5 +1,5 @@
 import pytest
-from truco import Card, Deck, Hand
+from truco import Card, Deck, Hand, CardCheck
 
 @pytest.fixture
 def deck():
@@ -148,3 +148,73 @@ class TestHand:
         assert self.card3 not in fixed_hand.cards
         fixed_hand.throw_card(1)
         assert self.card1 not in fixed_hand.cards
+
+class TestCardCheck:
+
+    @pytest.fixture
+    def suits(self):
+        cards = {}
+        cards['spades'] = Card("Espadas")
+        cards['clubs'] = Card("Paus")
+        cards['hearts'] = Card("Copas")
+        cards['diamonds'] = Card("Ouros")
+
+        return cards
+
+    @pytest.fixture
+    def shackles(self, suits):
+        hearts = suits['hearts'].clone("7")
+        zap = suits['clubs'].clone("4")
+        diamonds = suits['diamonds'].clone("7")
+        ace_of_spades = suits['spades'].clone("A")
+        
+        shackles = []
+        shackles.append(zap)
+        shackles.append(hearts)
+        shackles.append(diamonds)
+        shackles.append(ace_of_spades)
+        
+        return shackles
+
+    def get_winner_on_card_check(self, pair_one, pair_two):
+        round_cards = {'pair_one': pair_one, 'pair_two':pair_two}
+        card_check = CardCheck(round_cards)
+        result = card_check.get_winner()
+        return result
+
+    def test_card_check_with_all_shackles(self, shackles):
+        
+        pair_one = [shackles[0], shackles[3]]
+        pair_two = [shackles[1], shackles[2]]
+        
+        expected = shackles[0]
+        result = self.get_winner_on_card_check(pair_one, pair_two)
+
+        assert result.value is expected.value
+        assert result.suit is expected.suit
+
+    def test_card_check_with_one_shackle_on_each_pair(self, shackles, suits):
+        normal_card = suits['spades'].clone("3")
+        pair_one = [shackles[1], normal_card]
+        pair_two = [shackles[3], normal_card] 
+
+        expected = shackles[1]
+        result = self.get_winner_on_card_check(pair_one, pair_two)
+
+        assert result.value is expected.value
+        assert result.suit is expected.suit
+
+    def test_card_check_without_shackles(self, suits):
+        card1 = suits['spades'].clone("3") 
+        card2 = suits['clubs'].clone("J") 
+        card3 = suits['diamonds'].clone("2") 
+        card4 = suits['hearts'].clone("A") 
+        
+        pair_one = [card1, card2]
+        pair_two = [card3, card4] 
+
+        expected = card1
+        result = self.get_winner_on_card_check(pair_one, pair_two)
+
+        assert result.value is expected.value
+        assert result.suit is expected.suit
