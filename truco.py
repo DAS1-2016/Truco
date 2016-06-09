@@ -116,6 +116,24 @@ class Hand(object):
             cards_str += str(card) + ", "
         return cards_str
 
+
+class Player(object):
+    """ Represents the player """
+
+    def __init__(self, player_name, hand, game):
+        self.player_name = player_name
+        self.hand = hand
+        self.game = game
+
+    
+class Pair(object):
+    """ Represents the player """
+
+    def __init__(self, id_pair, players):
+        self.id_pair = id_pair
+        self.players = players
+
+
 if __name__ == '__main__':
     deck = Deck.get_instance()
     try:
@@ -157,12 +175,5 @@ if __name__ == '__main__':
         print e
 
 
-class Player(object):
-    """ Represents the player """
 
-    def __init__(self, player_name, hand, game):
-        self.player_name = player_name
-        self.hand = hand
-        self.game = game
 
-    
