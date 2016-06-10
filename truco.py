@@ -238,12 +238,15 @@ class CardCheck(object):
 class Player(object):
     """ Represents the player """
 
-    def __init__(self, player_name, hand, game):
+    def __init__(self, player_name):
         self.player_name = player_name
-        self.hand = hand
-        self.game = game
+        self.hand = None
 
-    
+    def throw_card(self, match, card_position=1):
+        card = self.hand.throw_card(card_position)
+        print self.player_name + " jogando carta " + str(card)
+        match.receive_card(self, card)
+
 class Pair(object):
     """ Represents the pair """
 
@@ -254,52 +257,98 @@ class Pair(object):
     players = {}.fromkeys(['player1','player2'],'player')
 
 
+class Game(object):
+    """Represents the Game"""
+    def __init__(self, pairs):
+        self.pairs = pairs
+        pair1 = pairs[0]
+        pair2 = pairs[1]
+        self.score = {pair1: 0, pair2: 0}
+        self.current_match = Match(self) 
+        self.matches = []
+
+    def start(self):
+        self.current_match.start_match()
+
+    def end_match(self):
+        self.current_match.end_match()
+
+    def next_match(self):
+        self.matches.append(self.current_match)
+
+class Round:
+
+    def __init__(self, match):
+        self.match = match
+        self.round_cards = {}
+
+    def add_round_card(self, player, card):
+        self.round_cards[player] = card
+
+    def end_round(self):
+        self.card_checker = CardCheck(self.round_cards)
+        winner = self.card_checker.get_winner()
+        return winner
+
+
+class Match:
+    
+    def __init__(self, game):
+        self.game = game
+        self.current_round = Round(self)
+        self.rounds = []
+        self.rounds_winners = []
+
+    def start_match(self): 
+        deck = Deck.get_instance()
+        try:
+            deck.shuffle()
+        except Exception, e:
+            print e
+        for pair in self.game.pairs:
+            self.create_player_hand(pair.players['player1'])
+            self.create_player_hand(pair.players['player2'])
+
+    def create_player_hand(self, player):
+        deck = Deck.get_instance()
+        cards = []
+        for i in range(1, 4):
+            cards.append(deck.get_top_card())
+        player.hand = Hand(cards) 
+
+    def receive_card(self, player, card):
+        self.current_round.add_round_card(player, card)
+
+    def end_current_round(self):
+        winner = self.current_round.end_round()
+        self.rounds_winners.append(winner)
+        rounds.append(self.current_round)
+        self.current_round = Round(self)
+
+
 if __name__ == '__main__':
-    deck = Deck.get_instance()
-    try:
-        deck.shuffle()
-    except Exception, e:
-        print e
-    card = deck.get_bottom_card()
-    deck.keep_card(card)
-    try:
-        deck.shuffle()
-    except Exception, e:
-        print e
+    
+    player1 = Player("Emilie")
 
-    cards = []
-    for i in range(1, 4):
-        cards.append(deck.get_bottom_card())
-    
-    hand = Hand(cards)
-    player1 = Player("Emilie", hand, None)
-    
-    cards = []
-    for i in range(1, 4):
-        cards.append(deck.get_bottom_card())
-    
-    hand = Hand(cards)
-    player2 = Player("Italo", hand, None)
+    player2 = Player("Italo")
 
-    cards = []
-    for i in range(1, 4):
-        cards.append(deck.get_bottom_card())
+    player3 = Player("Attany")
     
-    hand = Hand(cards)
-    player3 = Player("Attany", hand, None)
-    
-    cards = []
-    for i in range(1, 4):
-        cards.append(deck.get_bottom_card())
-    
-    hand = Hand(cards)
-    player4 = Player("Keli", hand, None)
+    player4 = Player("Keli")
 
     pair1 = {'player1': player1, 'player2': player2}
     pair_one = Pair('pair_one', pair1)
     pair2 = {'player1': player3, 'player2': player4}
     pair_two = Pair('pair_two', pair2)
 
+    game = Game([pair_one, pair_two])
+    game.start()
+    match = game.current_match
+
+    player1.throw_card(match=match)
+    player2.throw_card(match=match)
+    player3.throw_card(match=match)
+    player4.throw_card(match=match)
     # # Throwing first card
     # hand.throw_card()
     # # print hand
@@ -340,7 +389,4 @@ if __name__ == '__main__':
     #     print hand
     # except Exception, e:
     #     print e
-
-
-
 
