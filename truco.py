@@ -264,8 +264,7 @@ class Game(object):
     def __init__(self, pairs):
         self.pairs = pairs
         self.score = {'pair_one': 0, 'pair_two': 0}
-        self.current_match = Match(self) 
-        self.match_point = 1
+        self.current_match = Match(self)
         self.matches = []
 
     def start(self):
@@ -274,12 +273,15 @@ class Game(object):
     def end_current_match(self):
         winner = self.current_match.end_match()
         if winner is 'pair_one':
-            self.score['pair_one'] += self.match_point
+            self.score['pair_one'] += self.current_match.state.get_points()
         else:
-            self.score['pair_two'] += self.match_point
+            self.score['pair_two'] += self.current_match.state.get_points()
+        self.__next_match()
 
-    def next_match(self):
+    def __next_match(self):
         self.matches.append(self.current_match)
+        # Starts a new match
+        self.current_match = NormalMatch()
 
 class Round:
 
@@ -304,6 +306,44 @@ class Round:
         return winner
 
 
+class MatchState:
+
+    def __init__(self, match):
+        self.match = match
+
+    def raise_match(self):
+        raise NotImplementedError
+
+    def get_points(self):
+        raise NotImplementedError
+
+class TrucoMatch(MatchState):
+
+    MATCH_POINTS = 3
+    
+    def __init__(self, match):
+        MatchState.__init__(self, match)
+
+    def raise_match(self):
+        # self.match.set_state(SixMatch(match))
+        pass
+
+    def get_points(self):
+        return self.MATCH_POINTS
+
+class NormalMatch(MatchState):
+
+    MATCH_POINTS = 1
+    
+    def __init__(self, match):
+        MatchState.__init__(self, match)
+
+    def raise_match(self):
+        self.match.set_state(TrucoMatch(match))
+
+    def get_points(self):
+        return self.MATCH_POINTS
+
 class Match:
     
     def __init__(self, game):
@@ -311,6 +351,7 @@ class Match:
         self.current_round = Round(self)
         self.rounds = []
         self.rounds_winners = []
+        self.state = NormalMatch(self)
 
     def start_match(self): 
         deck = Deck.get_instance()
@@ -321,6 +362,9 @@ class Match:
         for pair in self.game.pairs:
             self.create_player_hand(pair.players['player1'])
             self.create_player_hand(pair.players['player2'])
+
+    def set_state(self, state):
+        self.state = state
 
     def create_player_hand(self, player):
         deck = Deck.get_instance()
@@ -338,6 +382,22 @@ class Match:
         self.rounds.append(self.current_round)
         self.current_round = Round(self)
 
+    def raise_match(self, player):
+        # Verificar qual o pair que ta pedindo truco
+        # Enviar uma solicitação pro outro pair de truco
+        # Se o outro pair aceitar o truco, mudar o estado do match
+        pair = self.__get_player_pair(player)
+        # Fazer a lógica de pedir o truco pro outro par.
+        # Pode ser um "scanf" perguntando se deseja aceitar ou pedir mais
+        ### send_raise_request(pair[1])
+
+    def __get_player_pair(self, player):
+        if player in self.game.pairs[0]:
+            pair = (0, 1)
+        else:
+            pair = (1, 0)
+        return pair
+
     def end_match(self):
         qnt_pair_one_winner = 0
         qnt_pair_two_winner = 0
@@ -351,16 +411,15 @@ class Match:
             winner = 'pair_one'
         else: 
             winner = 'pair_two'
-        return winner 
+        return winner
+
+
 
 if __name__ == '__main__':
     
     player1 = Player("Emilie")
-
     player2 = Player("Italo")
-
     player3 = Player("Attany")
-    
     player4 = Player("Keli")
 
     pair1 = {'player1': player1, 'player2': player2}
@@ -376,11 +435,14 @@ if __name__ == '__main__':
     player1.throw_card(match=match)
     player2.throw_card(match=match)
     player3.throw_card(match=match)
+
+    match.raise_match(player3)
+
     player4.throw_card(match=match)
 
     match.end_current_round()
 
-    #round1
+    #round2
     player1.throw_card(match=match)
     player2.throw_card(match=match)
     player3.throw_card(match=match)
@@ -388,7 +450,7 @@ if __name__ == '__main__':
 
     match.end_current_round()
 
-    #round1
+    #round3
     player1.throw_card(match=match)
     player2.throw_card(match=match)
     player3.throw_card(match=match)
