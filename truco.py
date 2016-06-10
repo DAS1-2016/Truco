@@ -234,6 +234,26 @@ class CardCheck(object):
 
         return shackle
 
+
+class Player(object):
+    """ Represents the player """
+
+    def __init__(self, player_name, hand, game):
+        self.player_name = player_name
+        self.hand = hand
+        self.game = game
+
+    
+class Pair(object):
+    """ Represents the pair """
+
+    def __init__(self, id_pair, players):
+        self.id_pair = id_pair
+        self.players = players
+
+    players = {}.fromkeys(['player1','player2'],'player')
+
+
 if __name__ == '__main__':
     deck = Deck.get_instance()
     try:
@@ -241,26 +261,45 @@ if __name__ == '__main__':
     except Exception, e:
         print e
     card = deck.get_bottom_card()
-    # print card
     deck.keep_card(card)
     try:
         deck.shuffle()
     except Exception, e:
         print e
 
-    print
     cards = []
-    # for i in range(1, 4):
-    #     cards.append(deck.get_bottom_card())
+    for i in range(1, 4):
+        cards.append(deck.get_bottom_card())
     
-    # hand = Hand(cards)
-    cards.append(Card("Ouros", "3"))
-    cards.append(Card("Ouros", "7"))
-    cards2 = []
-    cards2.append(Card("Espadas", "A"))
-    cards2.append(Card("Copas", "7"))
-    dict_c = {'pair_one':cards, 'pair_two':cards2} 
-    cardck = CardCheck(dict_c)
+    hand = Hand(cards)
+    player1 = Player("Emilie", hand, None)
+    
+    cards = []
+    for i in range(1, 4):
+        cards.append(deck.get_bottom_card())
+    
+    hand = Hand(cards)
+    player2 = Player("Italo", hand, None)
+
+    cards = []
+    for i in range(1, 4):
+        cards.append(deck.get_bottom_card())
+    
+    hand = Hand(cards)
+    player3 = Player("Attany", hand, None)
+    
+    cards = []
+    for i in range(1, 4):
+        cards.append(deck.get_bottom_card())
+    
+    hand = Hand(cards)
+    player4 = Player("Keli", hand, None)
+
+    pair1 = {'player1': player1, 'player2': player2}
+    pair_one = Pair('pair_one', pair1)
+    pair2 = {'player1': player3, 'player2': player4}
+    pair_two = Pair('pair_two', pair2)
+
     # # Throwing first card
     # hand.throw_card()
     # # print hand
@@ -278,3 +317,30 @@ if __name__ == '__main__':
     #     print hand
     # except Exception, e:
     #     print e
+    # for i in range(1, 4):
+    #     cards.append(deck.get_bottom_card())
+
+    # hand = Hand(cards)
+    # print hand
+
+    # # Throwing first card
+    # hand.throw_card()
+    # print hand
+
+    # # Throwing third card
+    # hand.throw_card()
+    # print hand
+
+    # # Throwing second card
+    # hand.throw_card()
+    # print hand
+
+    # try:
+    #     print hand.throw_card()
+    #     print hand
+    # except Exception, e:
+    #     print e
+
+
+
+
