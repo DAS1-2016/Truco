@@ -140,10 +140,10 @@ class CardCheck(object):
 
     def __init__(self, round_cards):
         self.round_cards = round_cards
-        self.winner_card = self.check_winner_round()
+        self.winner = self.check_winner_round()
     
     def get_winner(self):
-        return self.winner_card
+        return self.winner
 
     def check_winner_round(self):
         winners_pairs = []
@@ -153,8 +153,12 @@ class CardCheck(object):
         pair_two_winner = self.check_shackles(self.round_cards['pair_two'])
         winners_pairs.append(pair_two_winner)
         
-        winner_card = self.check_shackles(winners_pairs)   
-        return winner_card
+        winner_card = self.check_shackles(winners_pairs)  
+        if winner_card in self.round_cards['pair_one']:
+            winner = 'pair_one'
+        else: 
+            winner = 'pair_two'
+        return winner
 
     def check_shackles(self, cards):
         fst_card_is_shackle = self.check_if_is_shackle(cards[0]); 
@@ -199,8 +203,6 @@ class CardCheck(object):
 
         first_card_shackle = self.get_shackle(cards[0])
         second_card_shackle = self.get_shackle(cards[1])
-        print first_card_shackle
-        print second_card_shackle
         if(first_card_shackle is "zap"):
             winner = cards[0]
         elif(second_card_shackle is "zap"):
@@ -261,17 +263,20 @@ class Game(object):
     """Represents the Game"""
     def __init__(self, pairs):
         self.pairs = pairs
-        pair1 = pairs[0]
-        pair2 = pairs[1]
-        self.score = {pair1: 0, pair2: 0}
+        self.score = {'pair_one': 0, 'pair_two': 0}
         self.current_match = Match(self) 
+        self.match_point = 1
         self.matches = []
 
     def start(self):
         self.current_match.start_match()
 
-    def end_match(self):
-        self.current_match.end_match()
+    def end_current_match(self):
+        winner = self.current_match.end_match()
+        if winner is 'pair_one':
+            self.score['pair_one'] += self.match_point
+        else:
+            self.score['pair_two'] += self.match_point
 
     def next_match(self):
         self.matches.append(self.current_match)
@@ -286,7 +291,15 @@ class Round:
         self.round_cards[player] = card
 
     def end_round(self):
-        self.card_checker = CardCheck(self.round_cards)
+    
+        player1 = match.game.pairs[0].players['player1']
+        player2 = match.game.pairs[0].players['player2']
+        player3 = match.game.pairs[1].players['player1']
+        player4 = match.game.pairs[1].players['player2']
+        cards_pair_one = (self.round_cards[player1],self.round_cards[player2])
+        cards_pair_two = (self.round_cards[player3],self.round_cards[player4])
+        pair_round_cards = {'pair_one':cards_pair_one,'pair_two':cards_pair_two}
+        self.card_checker = CardCheck(pair_round_cards)
         winner = self.card_checker.get_winner()
         return winner
 
@@ -322,9 +335,23 @@ class Match:
     def end_current_round(self):
         winner = self.current_round.end_round()
         self.rounds_winners.append(winner)
-        rounds.append(self.current_round)
+        self.rounds.append(self.current_round)
         self.current_round = Round(self)
 
+    def end_match(self):
+        qnt_pair_one_winner = 0
+        qnt_pair_two_winner = 0
+        for winner in self.rounds_winners:
+            if winner is 'pair_one':
+                qnt_pair_one_winner += 1
+            else:
+                qnt_pair_two_winner += 1
+
+        if qnt_pair_one_winner >= 2:
+            winner = 'pair_one'
+        else: 
+            winner = 'pair_two'
+        return winner 
 
 if __name__ == '__main__':
     
@@ -345,10 +372,32 @@ if __name__ == '__main__':
     game.start()
     match = game.current_match
 
+    #round1
     player1.throw_card(match=match)
     player2.throw_card(match=match)
     player3.throw_card(match=match)
     player4.throw_card(match=match)
+
+    match.end_current_round()
+
+    #round1
+    player1.throw_card(match=match)
+    player2.throw_card(match=match)
+    player3.throw_card(match=match)
+    player4.throw_card(match=match)
+
+    match.end_current_round()
+
+    #round1
+    player1.throw_card(match=match)
+    player2.throw_card(match=match)
+    player3.throw_card(match=match)
+    player4.throw_card(match=match)
+
+    match.end_current_round()
+
+    game.end_current_match()
+    print game.score
     # # Throwing first card
     # hand.throw_card()
     # # print hand
