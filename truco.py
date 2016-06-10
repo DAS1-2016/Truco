@@ -155,3 +155,39 @@ if __name__ == '__main__':
         print hand
     except Exception, e:
         print e
+
+class CardCheck:
+
+    def get_winner(self):
+        pass
+
+class Round:
+
+    def __init__(self, match):
+        self.match = match
+        self.round_cards = {}
+
+    def add_round_card(self, player, card):
+        self.round_cards[player] = card
+
+    def end_round(self):
+        self.card_checker = CardCheck(self.round_cards)
+        winner = self.card_checker.get_winner()
+        return winner
+
+
+class Match:
+    
+    def __init__(self, game):
+        self.game = game
+        self.current_round = Round(self)
+        self.rounds = []
+
+    def receive_card(self, player, card):
+        self.current_round.add_round_card(player, card)
+
+    def end_current_round(self):
+        winner = self.current_round.end_round()
+        rounds.append(self.current_round)
+        self.current_round = Round(self)
+
