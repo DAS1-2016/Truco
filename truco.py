@@ -133,6 +133,8 @@ class Pair(object):
         self.id_pair = id_pair
         self.players = players
 
+    players = {}.fromkeys(['player1','player2'],'player_name')
+
 
 if __name__ == '__main__':
     deck = Deck.get_instance()
