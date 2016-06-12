@@ -1,5 +1,5 @@
+# -*- coding: utf-8 -*- 
 import random
-
 
 class Card():
     """Prototype class for Card"""
@@ -148,16 +148,16 @@ class CardCheck(object):
     def check_winner_round(self):
         winners_pairs = []
 
-        pair_one_winner = self.check_shackles(self.round_cards['pair_one'])
+        pair_one_winner = self.check_shackles(self.round_cards[Pair.PAIR_ONE_ID])
         winners_pairs.append(pair_one_winner)
-        pair_two_winner = self.check_shackles(self.round_cards['pair_two'])
+        pair_two_winner = self.check_shackles(self.round_cards[Pair.PAIR_TWO_ID])
         winners_pairs.append(pair_two_winner)
         
         winner_card = self.check_shackles(winners_pairs)  
-        if winner_card in self.round_cards['pair_one']:
-            winner = 'pair_one'
+        if winner_card in self.round_cards[Pair.PAIR_ONE_ID]:
+            winner = Pair.PAIR_ONE_ID
         else: 
-            winner = 'pair_two'
+            winner = Pair.PAIR_TWO_ID
         return winner
 
     def check_shackles(self, cards):
@@ -199,6 +199,7 @@ class CardCheck(object):
             winner_card = cards[1]
 
         return winner_card
+
     def get_shackle_winner(self, cards):
 
         first_card_shackle = self.get_shackle(cards[0])
@@ -251,6 +252,9 @@ class Player(object):
 
 class Pair(object):
     """ Represents the pair """
+    
+    PAIR_ONE_ID = 'pair_one'
+    PAIR_TWO_ID = 'pair_two'
 
     def __init__(self, id_pair, players):
         self.id_pair = id_pair
@@ -263,25 +267,31 @@ class Game(object):
     """Represents the Game"""
     def __init__(self, pairs):
         self.pairs = pairs
-        self.score = {'pair_one': 0, 'pair_two': 0}
+        self.score = {Pair.PAIR_ONE_ID: 0, Pair.PAIR_TWO_ID: 0}
         self.current_match = Match(self)
         self.matches = []
 
     def start(self):
         self.current_match.start_match()
 
-    def end_current_match(self):
-        winner = self.current_match.end_match()
-        if winner is 'pair_one':
-            self.score['pair_one'] += self.current_match.state.get_points()
+    def end_current_match(self, pair=None):
+
+        if not pair:
+            #  FAZER O CASO DE QUANDO PASSAR UM PAIR QUE VAI VIR DE UM RAISE NAO ACEITADO
         else:
-            self.score['pair_two'] += self.current_match.state.get_points()
+            winner = self.current_match.end_match()
+
+        if winner is Pair.PAIR_ONE_ID:
+            self.score[Pair.PAIR_ONE_ID] += self.current_match.state.get_points()
+        else:
+            self.score[Pair.PAIR_TWO_ID] += self.current_match.state.get_points()
         self.__next_match()
 
     def __next_match(self):
         self.matches.append(self.current_match)
         # Starts a new match
-        self.current_match = NormalMatch()
+        self.current_match = Match(self)
+        self.current_match.start_match()
 
 class Round:
 
@@ -300,7 +310,7 @@ class Round:
         player4 = match.game.pairs[1].players['player2']
         cards_pair_one = (self.round_cards[player1],self.round_cards[player2])
         cards_pair_two = (self.round_cards[player3],self.round_cards[player4])
-        pair_round_cards = {'pair_one':cards_pair_one,'pair_two':cards_pair_two}
+        pair_round_cards = {Pair.PAIR_ONE_ID:cards_pair_one,Pair.PAIR_TWO_ID:cards_pair_two}
         self.card_checker = CardCheck(pair_round_cards)
         winner = self.card_checker.get_winner()
         return winner
@@ -311,10 +321,17 @@ class MatchState:
     def __init__(self, match):
         self.match = match
 
+    @staticmethod
+    def get_state_name():
+        raise NotImplementedError
+    
     def raise_match(self):
         raise NotImplementedError
 
     def get_points(self):
+        raise NotImplementedError
+
+    def next(self):
         raise NotImplementedError
 
 class TrucoMatch(MatchState):
@@ -323,6 +340,10 @@ class TrucoMatch(MatchState):
     
     def __init__(self, match):
         MatchState.__init__(self, match)
+    
+    @staticmethod
+    def get_state_name():
+        return "Truco"
 
     def raise_match(self):
         # self.match.set_state(SixMatch(match))
@@ -331,6 +352,10 @@ class TrucoMatch(MatchState):
     def get_points(self):
         return self.MATCH_POINTS
 
+    def next(self):
+        # return SixMatch
+        pass
+
 class NormalMatch(MatchState):
 
     MATCH_POINTS = 1
@@ -338,11 +363,18 @@ class NormalMatch(MatchState):
     def __init__(self, match):
         MatchState.__init__(self, match)
 
+    @staticmethod
+    def get_state_name():
+        return "Normal"
+
     def raise_match(self):
         self.match.set_state(TrucoMatch(match))
 
     def get_points(self):
         return self.MATCH_POINTS
+
+    def next(self):
+        return TrucoMatch 
 
 class Match:
     
@@ -353,7 +385,7 @@ class Match:
         self.rounds_winners = []
         self.state = NormalMatch(self)
 
-    def start_match(self): 
+    def start_match(self):
         deck = Deck.get_instance()
         try:
             deck.shuffle()
@@ -380,52 +412,87 @@ class Match:
         winner = self.current_round.end_round()
         self.rounds_winners.append(winner)
         self.rounds.append(self.current_round)
-        self.current_round = Round(self)
+        if self.is_last_round():
+            self.game.end_current_match()
+        else:
+            self.current_round = Round(self)
+
+    def is_last_round(self):
+        return len(self.rounds) === 3
 
     def raise_match(self, player):
-        # Verificar qual o pair que ta pedindo truco
-        # Enviar uma solicitação pro outro pair de truco
-        # Se o outro pair aceitar o truco, mudar o estado do match
         pair = self.__get_player_pair(player)
-        # Fazer a lógica de pedir o truco pro outro par.
-        # Pode ser um "scanf" perguntando se deseja aceitar ou pedir mais
-        ### send_raise_request(pair[1])
+        accept = self.__send_raise_request(pair[1])
+        if(accept):
+            self.state.raise_match()
+        else:
+            winner_pair_id = self.game.pairs[pair[0]].id_pair
+            self.game.end_current_match(winner_pair_id)          
 
     def __get_player_pair(self, player):
-        if player in self.game.pairs[0]:
+        if player in self.game.pairs[0].players:
             pair = (0, 1)
         else:
             pair = (1, 0)
         return pair
 
+    def __send_raise_request(self, target_pair):
+        pair = self.game.pairs[target_pair].id_pair
+        if pair == Pair.PAIR_ONE_ID:
+            pair_number = 'Par 1'
+        else:
+            pair_number = 'Par 2'
+
+        message = pair_number + 'deseja aceitar o pedido de ' + self.state.next().get_state_name()
+        accept = self.__get_pair_answer(message)
+
+        return accept
+
+    def __get_pair_answer(self, message):
+        answer = raw_input(message + "\n" + "S - Sim/ N - Nao").lower()    
+        if(answer is 's' or answer is 'sim'):
+            accept = True
+        else:
+            accept = False
+
+        return accept
+
     def end_match(self):
         qnt_pair_one_winner = 0
         qnt_pair_two_winner = 0
         for winner in self.rounds_winners:
-            if winner is 'pair_one':
+            if winner is Pair.PAIR_ONE_ID:
                 qnt_pair_one_winner += 1
             else:
                 qnt_pair_two_winner += 1
 
         if qnt_pair_one_winner >= 2:
-            winner = 'pair_one'
+            winner = Pair.PAIR_ONE_ID
         else: 
-            winner = 'pair_two'
+            winner = Pair.PAIR_TWO_ID
         return winner
 
 
 
 if __name__ == '__main__':
     
-    player1 = Player("Emilie")
-    player2 = Player("Italo")
-    player3 = Player("Attany")
-    player4 = Player("Keli")
+    print "AIKE TRUCO"
+    player_name = raw_input("Insira o nome do Jogador 1 da Dupla 1\n")
+    player1 = Player(player_name)
+    
+    player_name = raw_input("Insira o nome do Jogador 2 da Dupla 1\n")
+    player2 = Player(player_name)
 
+    player_name = raw_input("Insira o nome do Jogador 1 da Dupla 2\n")
+    player3 = Player(player_name)
+
+    player_name = raw_input("Insira o nome do Jogador 2 da Dupla 2\n")
+    player4 = Player(player_name)
+    
     pair1 = {'player1': player1, 'player2': player2}
-    pair_one = Pair('pair_one', pair1)
+    pair_one = Pair(Pair.PAIR_ONE_ID, pair1)
     pair2 = {'player1': player3, 'player2': player4}
-    pair_two = Pair('pair_two', pair2)
+    pair_two = Pair(Pair.PAIR_TWO_ID, pair2)
 
     game = Game([pair_one, pair_two])
     game.start()
@@ -460,44 +527,4 @@ if __name__ == '__main__':
 
     game.end_current_match()
     print game.score
-    # # Throwing first card
-    # hand.throw_card()
-    # # print hand
-
-    # # Throwing third card
-    # hand.throw_card()
-    # # print hand
-
-    # # Throwing second card
-    # hand.throw_card()
-    # # print hand
-
-    # try:
-    #     print hand.throw_card()
-    #     print hand
-    # except Exception, e:
-    #     print e
-    # for i in range(1, 4):
-    #     cards.append(deck.get_bottom_card())
-
-    # hand = Hand(cards)
-    # print hand
-
-    # # Throwing first card
-    # hand.throw_card()
-    # print hand
-
-    # # Throwing third card
-    # hand.throw_card()
-    # print hand
-
-    # # Throwing second card
-    # hand.throw_card()
-    # print hand
-
-    # try:
-    #     print hand.throw_card()
-    #     print hand
-    # except Exception, e:
-    #     print e
-
+   
