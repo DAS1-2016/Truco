@@ -64,9 +64,9 @@ class Deck():
 
     def __check_deck(self):
         """ Check deck integrity """
+        print(len(self.cards))
         if len(self.cards) is not self.CARDS_QUANTITY:
-            raise Exception("""Alguem esta roubando e nao
-                             devolveu todas as cartas!""")
+            raise Exception('Alguem esta roubando e nao devolveu todas as cartas!')
 
     def get_top_card(self):
         top_card = self.cards[0]
@@ -277,9 +277,9 @@ class Game(object):
     def end_current_match(self, pair=None):
 
         if not pair:
-            #  FAZER O CASO DE QUANDO PASSAR UM PAIR QUE VAI VIR DE UM RAISE NAO ACEITADO
-        else:
             winner = self.current_match.end_match()
+        else:
+            winner = pair
 
         if winner is Pair.PAIR_ONE_ID:
             self.score[Pair.PAIR_ONE_ID] += self.current_match.state.get_points()
@@ -287,7 +287,25 @@ class Game(object):
             self.score[Pair.PAIR_TWO_ID] += self.current_match.state.get_points()
         self.__next_match()
 
+    def colect_cards(self):
+        print
+        print "Colecting cards..."
+        self.colect_round_cards()
+        self.colect_players_cards()
+
+    def colect_players_cards(self):
+        for pair in self.pairs:
+            for player in pair.players:
+                for card in pair.players[player].hand.cards:
+                    Deck.get_instance().keep_card(card)
+
+    def colect_round_cards(self):
+        for rnd in self.current_match.rounds:
+            for player in rnd.round_cards:
+                Deck.get_instance().keep_card(rnd.round_cards[player])
+
     def __next_match(self):
+        self.colect_cards()
         self.matches.append(self.current_match)
         # Starts a new match
         self.current_match = Match(self)
@@ -334,6 +352,67 @@ class MatchState:
     def next(self):
         raise NotImplementedError
 
+class TwelveMatch(MatchState):
+
+    MATCH_POINTS = 12
+    
+    def __init__(self, match):
+        MatchState.__init__(self, match)
+    
+    @staticmethod
+    def get_state_name():
+        return "Doze"
+
+    def raise_match(self):
+        raise Exception("Partida de 12, ou vai ou racha")
+
+    def get_points(self):
+        return self.MATCH_POINTS
+
+    def next(self):
+        raise Exception("Partida de 12, ou vai ou racha")
+
+class NineMatch(MatchState):
+
+    MATCH_POINTS = 9
+    
+    def __init__(self, match):
+        MatchState.__init__(self, match)
+    
+    @staticmethod
+    def get_state_name():
+        return "Nove"
+
+    def raise_match(self):
+        self.match.set_state(TwelveMatch(match))
+
+    def get_points(self):
+        return self.MATCH_POINTS
+
+    def next(self):
+        return TwelveMatch
+
+
+class SixMatch(MatchState):
+
+    MATCH_POINTS = 6
+    
+    def __init__(self, match):
+        MatchState.__init__(self, match)
+    
+    @staticmethod
+    def get_state_name():
+        return "Seis"
+
+    def raise_match(self):
+        self.match.set_state(NineMatch(match))
+
+    def get_points(self):
+        return self.MATCH_POINTS
+
+    def next(self):
+        return NineMatch
+
 class TrucoMatch(MatchState):
 
     MATCH_POINTS = 3
@@ -346,15 +425,13 @@ class TrucoMatch(MatchState):
         return "Truco"
 
     def raise_match(self):
-        # self.match.set_state(SixMatch(match))
-        pass
+        self.match.set_state(SixMatch(match))
 
     def get_points(self):
         return self.MATCH_POINTS
 
     def next(self):
-        # return SixMatch
-        pass
+        return SixMatch
 
 class NormalMatch(MatchState):
 
@@ -387,10 +464,7 @@ class Match:
 
     def start_match(self):
         deck = Deck.get_instance()
-        try:
-            deck.shuffle()
-        except Exception, e:
-            print e
+        deck.shuffle()
         for pair in self.game.pairs:
             self.create_player_hand(pair.players['player1'])
             self.create_player_hand(pair.players['player2'])
@@ -418,19 +492,24 @@ class Match:
             self.current_round = Round(self)
 
     def is_last_round(self):
-        return len(self.rounds) === 3
+        return len(self.rounds) == 3
 
     def raise_match(self, player):
+        print("\n %s está pedindo %s \n" % (player.player_name, self.state.next().get_state_name()))
         pair = self.__get_player_pair(player)
         accept = self.__send_raise_request(pair[1])
         if(accept):
             self.state.raise_match()
         else:
             winner_pair_id = self.game.pairs[pair[0]].id_pair
-            self.game.end_current_match(winner_pair_id)          
+            self.rounds.append(self.current_round)
+            self.game.end_current_match(winner_pair_id)
 
     def __get_player_pair(self, player):
-        if player in self.game.pairs[0].players:
+
+        player1_pair1 = player.player_name == self.game.pairs[0].players['player1'].player_name
+        player2_pair1 = player.player_name == self.game.pairs[0].players['player2'].player_name         
+        if  player1_pair1 or player2_pair1:
             pair = (0, 1)
         else:
             pair = (1, 0)
@@ -438,19 +517,20 @@ class Match:
 
     def __send_raise_request(self, target_pair):
         pair = self.game.pairs[target_pair].id_pair
+        print pair
         if pair == Pair.PAIR_ONE_ID:
             pair_number = 'Par 1'
         else:
             pair_number = 'Par 2'
 
-        message = pair_number + 'deseja aceitar o pedido de ' + self.state.next().get_state_name()
+        message = pair_number + ' deseja aceitar o pedido de ' + self.state.next().get_state_name()
         accept = self.__get_pair_answer(message)
 
         return accept
 
     def __get_pair_answer(self, message):
-        answer = raw_input(message + "\n" + "S - Sim/ N - Nao").lower()    
-        if(answer is 's' or answer is 'sim'):
+        answer = raw_input(message + "\n" + "S - Sim/ N - Nao\n").lower()  
+        if(answer == "s" or answer == "sim"):
             accept = True
         else:
             accept = False
@@ -476,18 +556,23 @@ class Match:
 
 if __name__ == '__main__':
     
-    print "AIKE TRUCO"
-    player_name = raw_input("Insira o nome do Jogador 1 da Dupla 1\n")
-    player1 = Player(player_name)
+    print "\t\nAIKE TRUCO\n"
+
+    player1 = Player("Emilie")
+    player2 = Player("Italo")
+    player3 = Player("Attany")
+    player4 = Player("Keli")
+    # player_name = raw_input("Insira o nome do Jogador 1 da Dupla 1\n")
+    # player1 = Player(player_name)
     
-    player_name = raw_input("Insira o nome do Jogador 2 da Dupla 1\n")
-    player2 = Player(player_name)
+    # player_name = raw_input("Insira o nome do Jogador 2 da Dupla 1\n")
+    # player2 = Player(player_name)
 
-    player_name = raw_input("Insira o nome do Jogador 1 da Dupla 2\n")
-    player3 = Player(player_name)
+    # player_name = raw_input("Insira o nome do Jogador 1 da Dupla 2\n")
+    # player3 = Player(player_name)
 
-    player_name = raw_input("Insira o nome do Jogador 2 da Dupla 2\n")
-    player4 = Player(player_name)
+    # player_name = raw_input("Insira o nome do Jogador 2 da Dupla 2\n")
+    # player4 = Player(player_name)
     
     pair1 = {'player1': player1, 'player2': player2}
     pair_one = Pair(Pair.PAIR_ONE_ID, pair1)
@@ -495,36 +580,49 @@ if __name__ == '__main__':
     pair_two = Pair(Pair.PAIR_TWO_ID, pair2)
 
     game = Game([pair_one, pair_two])
+
     game.start()
+
     match = game.current_match
 
-    #round1
+    # round1
     player1.throw_card(match=match)
     player2.throw_card(match=match)
     player3.throw_card(match=match)
 
     match.raise_match(player3)
 
+    # print match.state
+
     player4.throw_card(match=match)
 
     match.end_current_round()
 
-    #round2
+    print
+    print "End of FIRST round "
+    print
+
+    # # #round2
     player1.throw_card(match=match)
     player2.throw_card(match=match)
-    player3.throw_card(match=match)
-    player4.throw_card(match=match)
+    match.raise_match(player2)
 
-    match.end_current_round()
+    # player3.throw_card(match=match)
+    # player4.throw_card(match=match)
 
-    #round3
-    player1.throw_card(match=match)
-    player2.throw_card(match=match)
-    player3.throw_card(match=match)
-    player4.throw_card(match=match)
+    # match.end_current_round()
+    # print
 
-    match.end_current_round()
+    # # # #round3
+    # player1.throw_card(match=match)
+    # player2.throw_card(match=match)
+    # player3.throw_card(match=match)
+    # match.raise_match(player3)
 
-    game.end_current_match()
+    # player4.throw_card(match=match)
+
+    # match.end_current_round()
+    # print
+
     print game.score
    
