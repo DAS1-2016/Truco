@@ -246,7 +246,7 @@ class Player(object):
 
     def throw_card(self, match, card_position=1):
         card = self.hand.throw_card(card_position)
-        print self.player_name + " jogando carta " + str(card)
+        print "\n\t" + self.player_name + " jogou a carta " + str(card)
         match.receive_card(self, card)
 
 class Pair(object):
@@ -319,6 +319,8 @@ class Game(object):
         print self.score[Pair.PAIR_ONE_ID]
         print "Dupla 2"
         print self.score[Pair.PAIR_TWO_ID]
+
+
 class Round:
 
     def __init__(self, match):
@@ -466,6 +468,9 @@ class NormalMatch(MatchState):
 class Match:
     
     def __init__(self, game):
+        print
+        print "\tIniciando uma nova partida"
+        print
         self.game = game
         self.current_round = Round(self)
         self.rounds = []
@@ -506,7 +511,6 @@ class Match:
             self.current_round = Round(self)
 
     def is_last_round(self):
-        print self.rounds
         return len(self.rounds) == 3
 
     def raise_match(self, player):
@@ -567,6 +571,3 @@ class Match:
         else: 
             winner = Pair.PAIR_TWO_ID
         return winner
-
-
-
