@@ -5,24 +5,28 @@ def play_player(player, match, show_raise_option=None):
     if(show_raise_option is None):
         show_raise_option = match.state.__class__ is not TwelveMatch
     
-    if(show_raise_option):
+    if(show_raise_option and len(player.hand.cards) is not 0) :
         text_state = "0 - Pedir " + str(match.state.next().get_state_name() + "\n")
     else:
         text_state = "\n"
 
     print "Vez de " + player.player_name + "\n"
 
+    indexes = []
     for index, card in enumerate(player.hand.cards):
+        indexes.append(index + 1)
         print str(index + 1) + " - " + str(card)
     
-    card = raw_input(text_state)
+    print text_state
+    card = raw_input()
    
+    # print "indexes"
+    # print indexes
     if(show_raise_option and int(card) == 0):
         accept = match.raise_match(player)
         if(accept is True):
             play_player(player, match, False)
-
-    elif(int(card) == 1 or int(card) == 2 or int(card) == 3):
+    elif(int(card) in indexes):
         player.throw_card(match=match, card_position=int(card))
     else:
         print "Entrada invalida"

@@ -492,8 +492,7 @@ class Match:
     def receive_card(self, player, card):
         self.current_round.add_round_card(player, card)
         qnt_cards_on_round = self.current_round.cards_on_round
-        print qnt_cards_on_round
-        if (qnt_cards_on_round is 4):
+        if (qnt_cards_on_round % 4 is 0):
             self.end_current_round()
 
     def end_current_round(self):
@@ -507,6 +506,7 @@ class Match:
             self.current_round = Round(self)
 
     def is_last_round(self):
+        print self.rounds
         return len(self.rounds) == 3
 
     def raise_match(self, player):
