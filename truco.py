@@ -64,7 +64,6 @@ class Deck():
 
     def __check_deck(self):
         """ Check deck integrity """
-        print(len(self.cards))
         if len(self.cards) is not self.CARDS_QUANTITY:
             raise Exception('Alguem esta roubando e nao devolveu todas as cartas!')
 
@@ -282,14 +281,17 @@ class Game(object):
             winner = pair
 
         if winner is Pair.PAIR_ONE_ID:
-            self.score[Pair.PAIR_ONE_ID] += self.current_match.state.get_points()
+            self.score[Pair.PAIR_ONE_ID] += self.current_match.state.get_points()   
         else:
             self.score[Pair.PAIR_TWO_ID] += self.current_match.state.get_points()
+    
+        print "Fim da partida"
+        self.print_score()
         self.__next_match()
 
     def colect_cards(self):
         print
-        print "Colecting cards..."
+        print "Recolhendo cartas..."
         self.colect_round_cards()
         self.colect_players_cards()
 
@@ -311,13 +313,21 @@ class Game(object):
         self.current_match = Match(self)
         self.current_match.start_match()
 
+    def print_score(self):
+        print "Pontos\n"
+        print "Dupla 1"
+        print self.score[Pair.PAIR_ONE_ID]
+        print "Dupla 2"
+        print self.score[Pair.PAIR_TWO_ID]
 class Round:
 
     def __init__(self, match):
         self.match = match
         self.round_cards = {}
+        self.cards_on_round = 0
 
     def add_round_card(self, player, card):
+        self.cards_on_round += 1 
         self.round_cards[player] = card
 
     def end_round(self):
@@ -481,8 +491,13 @@ class Match:
 
     def receive_card(self, player, card):
         self.current_round.add_round_card(player, card)
+        qnt_cards_on_round = self.current_round.cards_on_round
+        print qnt_cards_on_round
+        if (qnt_cards_on_round is 4):
+            self.end_current_round()
 
     def end_current_round(self):
+        print "\n \t \t Fim da rodada \n"
         winner = self.current_round.end_round()
         self.rounds_winners.append(winner)
         self.rounds.append(self.current_round)
@@ -505,6 +520,8 @@ class Match:
             self.rounds.append(self.current_round)
             self.game.end_current_match(winner_pair_id)
 
+        return accept
+
     def __get_player_pair(self, player):
 
         player1_pair1 = player.player_name == self.game.pairs[0].players['player1'].player_name
@@ -517,7 +534,6 @@ class Match:
 
     def __send_raise_request(self, target_pair):
         pair = self.game.pairs[target_pair].id_pair
-        print pair
         if pair == Pair.PAIR_ONE_ID:
             pair_number = 'Par 1'
         else:
