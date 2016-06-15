@@ -322,10 +322,10 @@ class Round:
 
     def end_round(self):
     
-        player1 = match.game.pairs[0].players['player1']
-        player2 = match.game.pairs[0].players['player2']
-        player3 = match.game.pairs[1].players['player1']
-        player4 = match.game.pairs[1].players['player2']
+        player1 = self.match.game.pairs[0].players['player1']
+        player2 = self.match.game.pairs[0].players['player2']
+        player3 = self.match.game.pairs[1].players['player1']
+        player4 = self.match.game.pairs[1].players['player2']
         cards_pair_one = (self.round_cards[player1],self.round_cards[player2])
         cards_pair_two = (self.round_cards[player3],self.round_cards[player4])
         pair_round_cards = {Pair.PAIR_ONE_ID:cards_pair_one,Pair.PAIR_TWO_ID:cards_pair_two}
@@ -384,7 +384,7 @@ class NineMatch(MatchState):
         return "Nove"
 
     def raise_match(self):
-        self.match.set_state(TwelveMatch(match))
+        self.match.set_state(TwelveMatch(self.match))
 
     def get_points(self):
         return self.MATCH_POINTS
@@ -405,7 +405,7 @@ class SixMatch(MatchState):
         return "Seis"
 
     def raise_match(self):
-        self.match.set_state(NineMatch(match))
+        self.match.set_state(NineMatch(self.match))
 
     def get_points(self):
         return self.MATCH_POINTS
@@ -425,7 +425,7 @@ class TrucoMatch(MatchState):
         return "Truco"
 
     def raise_match(self):
-        self.match.set_state(SixMatch(match))
+        self.match.set_state(SixMatch(self.match))
 
     def get_points(self):
         return self.MATCH_POINTS
@@ -445,7 +445,7 @@ class NormalMatch(MatchState):
         return "Normal"
 
     def raise_match(self):
-        self.match.set_state(TrucoMatch(match))
+        self.match.set_state(TrucoMatch(self.match))
 
     def get_points(self):
         return self.MATCH_POINTS
@@ -554,75 +554,3 @@ class Match:
 
 
 
-if __name__ == '__main__':
-    
-    print "\t\nAIKE TRUCO\n"
-
-    player1 = Player("Emilie")
-    player2 = Player("Italo")
-    player3 = Player("Attany")
-    player4 = Player("Keli")
-    # player_name = raw_input("Insira o nome do Jogador 1 da Dupla 1\n")
-    # player1 = Player(player_name)
-    
-    # player_name = raw_input("Insira o nome do Jogador 2 da Dupla 1\n")
-    # player2 = Player(player_name)
-
-    # player_name = raw_input("Insira o nome do Jogador 1 da Dupla 2\n")
-    # player3 = Player(player_name)
-
-    # player_name = raw_input("Insira o nome do Jogador 2 da Dupla 2\n")
-    # player4 = Player(player_name)
-    
-    pair1 = {'player1': player1, 'player2': player2}
-    pair_one = Pair(Pair.PAIR_ONE_ID, pair1)
-    pair2 = {'player1': player3, 'player2': player4}
-    pair_two = Pair(Pair.PAIR_TWO_ID, pair2)
-
-    game = Game([pair_one, pair_two])
-
-    game.start()
-
-    match = game.current_match
-
-    # round1
-    player1.throw_card(match=match)
-    player2.throw_card(match=match)
-    player3.throw_card(match=match)
-
-    match.raise_match(player3)
-
-    # print match.state
-
-    player4.throw_card(match=match)
-
-    match.end_current_round()
-
-    print
-    print "End of FIRST round "
-    print
-
-    # # #round2
-    player1.throw_card(match=match)
-    player2.throw_card(match=match)
-    match.raise_match(player2)
-
-    # player3.throw_card(match=match)
-    # player4.throw_card(match=match)
-
-    # match.end_current_round()
-    # print
-
-    # # # #round3
-    # player1.throw_card(match=match)
-    # player2.throw_card(match=match)
-    # player3.throw_card(match=match)
-    # match.raise_match(player3)
-
-    # player4.throw_card(match=match)
-
-    # match.end_current_round()
-    # print
-
-    print game.score
-   
